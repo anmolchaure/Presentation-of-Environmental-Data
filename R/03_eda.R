@@ -41,12 +41,18 @@ str(object = dta)
 
 dta$location <- as.factor(x = dta$location)
 dta$variable <- as.factor(x = dta$variable)
+dta$id <- as.factor(x = paste(iconv(x = gsub(pattern = "\\ |\\.|\\/",
+                                             replacement = "",
+                                             x = dta$location), 
+                                    to = "ASCII//TRANSLIT"),
+                              dta$reg_id,
+                              sep = "_"))
 
 object.size(x = dta)
 
 str(object = dta)
 
-prec <- dta[dta$variable == "rain", c("date", "value", "location", "reg_id")]
+prec <- dta[dta$variable == "rain", c("date", "value", "id")]
 
 unique(x = prec$location)
 
@@ -54,44 +60,14 @@ diff(x = as.Date(x = prec$date))
 
 prec
 
-## aggregate the stations in daily steps to mothly data
+id <- unique(x = prec[which(diff(x = as.Date(x = prec$date)) == 1), 
+                            "id"])
 
-stations <- unique(x = prec[which(diff(x = as.Date(x = prec$date)) == 1), 
-                            "location"])
-
-daily <- prec[prec$location %in% stations, ]
-
-# x <- diff(x = daily$date)
-# table(x = x)
-# 
-# monthly <- prec[diff(x = as.Date(x = prec$date)) != 1, ] 
-# 
-# 
-# # aggregate.data.frame(x = daily,
-# #                      by = list(months = format(x = daily$date,
-# #                                                format = "%Y-%m")),
-# #                      FUN = sum)
-# 
-# aux <- split(x = daily, 
-#              f =  format(x = daily$date,
-#                          format = "%Y-%m"))
-# m <- lapply(X = aux, 
-#             FUN = function(x) {
-#               
-#               x <- aux[[1]]
-#               
-#               data.frame(date = x$date[1], 
-#                          value = sum(x = x$value, 
-#                                      na.rm = TRUE), 
-#                          location = unique(x = x$location))
-#             })
-# 
-# do.call(what = rbind, 
-#         args = m)
+daily <- prec[prec$id %in% id, ]
 
 summary(object = daily)
 
-test <- daily[daily$location == "Bílý Kříž",]
+test <- daily[daily$id == unique(daily$id)[8],]
 
 plot(x = test$date,
      y = test$value, 
@@ -100,20 +76,5 @@ plot(x = test$date,
 diff(x = test$date)
 
 ##
-unique(x = daily[, c("location", "reg_id")])
-
 nz <- daily[daily$value > 0,]
 
-nz_l <- split(x = nz,
-              f = nz$location)
-
-sapply(
-  X = nz_l, 
-  FUN = function(x) {
-    
-    c("mean" = mean(x = x$value,
-                    na.rm = TRUE),
-      "sd" = sd(x = x$value,
-                na.rm = TRUE))
-  }
-)
